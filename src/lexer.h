@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <string>
 #include <variant>
+#include <vector>
+#include <unordered_map>
 
 namespace parse {
 
@@ -132,7 +134,23 @@ public:
     }
 
 private:
+    bool isNumber(char c);
+    bool isString(char c);
+    bool isId(char c);
+
+    void GetToken(char c);
+    void LoadString();
+    void LoadNumber(char c);
+    void LoadId(char c);
+    void LoadChar(char c);
     std::istream& input_;
+    size_t indexCurrentToken_;
+    size_t currentDent_;
+    std::vector<Token> tokens_;
+    std::unordered_map<std::string, Token> tableLexems_;
+    std::unordered_map<char, Token> tableOneChars_;
+
+
     // Реализуйте приватную часть самостоятельно
 };
 
