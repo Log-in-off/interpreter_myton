@@ -75,11 +75,30 @@ std::ostream& operator<<(std::ostream& os, const Token& rhs) {
     return os << "Unknown token :("sv;
 }
 
-Lexer::Lexer(std::istream& /*input*/) {
+Lexer::Lexer(std::istream& input):input_(input) {
     // Реализуйте конструктор самостоятельно
 }
 
 const Token& Lexer::CurrentToken() const {
+    char c;
+    input_ >> c;
+
+      if (c == '\'') {
+          return LoadArray(input);
+      } else if (c == '{') {
+          return LoadDict(input);
+      } else if (c == '"') {
+          return LoadString(input);
+      } else if (c == 'f' || c == 't') {
+          input.putback(c);
+          return LoadBool(input);
+      } else if (c == 'n') {
+          input.putback(c);
+          return LoadNull (input);
+      } else {
+          input.putback(c);
+          return LoadNumber(input);
+      }
     // Заглушка. Реализуйте метод самостоятельно
     throw std::logic_error("Not implemented"s);
 }
