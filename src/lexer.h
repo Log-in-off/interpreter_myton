@@ -102,35 +102,36 @@ public:
     template <typename T>
     const T& Expect() const {
         using namespace std::literals;
-        // Заглушка. Реализуйте метод самостоятельно
-        throw LexerError("Not implemented"s);
+
+        if (CurrentToken().Is<T>())
+            return CurrentToken().As<T>();
+        else
+            throw LexerError("Not Expect type"s);
     }
 
     // Метод проверяет, что текущий токен имеет тип T, а сам токен содержит значение value.
     // В противном случае метод выбрасывает исключение LexerError
     template <typename T, typename U>
-    void Expect(const U& /*value*/) const {
+    void Expect(const U& value) const {
         using namespace std::literals;
-        // Заглушка. Реализуйте метод самостоятельно
-        throw LexerError("Not implemented"s);
+        if (!(CurrentToken().Is<T>() && CurrentToken().As<T>().value == value))
+            throw LexerError("Not Expect type or value"s);
     }
 
     // Если следующий токен имеет тип T, метод возвращает ссылку на него.
     // В противном случае метод выбрасывает исключение LexerError
     template <typename T>
     const T& ExpectNext() {
-        using namespace std::literals;
-        // Заглушка. Реализуйте метод самостоятельно
-        throw LexerError("Not implemented"s);
+        NextToken();
+        return Expect<T>();
     }
 
     // Метод проверяет, что следующий токен имеет тип T, а сам токен содержит значение value.
     // В противном случае метод выбрасывает исключение LexerError
     template <typename T, typename U>
-    void ExpectNext(const U& /*value*/) {
-        using namespace std::literals;
-        // Заглушка. Реализуйте метод самостоятельно
-        throw LexerError("Not implemented"s);
+    void ExpectNext(const U& value) {
+        NextToken();
+        Expect<T, U>(value);
     }
 
 private:
