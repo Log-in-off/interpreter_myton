@@ -97,17 +97,16 @@ Lexer::Lexer(std::istream& input):input_(input), indexCurrentToken_(0), currentD
     tableOneChars_[':'] = token_type::Char{':'};
     tableOneChars_['('] = token_type::Char{'('};
     tableOneChars_[')'] = token_type::Char{')'};
-    tableOneChars_['\n'] = token_type::Newline();
+    tableOneChars_[','] = token_type::Char{','};
+    tableOneChars_['.'] = token_type::Char{'.'};
 
-    //char c;
-    //while (input_ >> c)
-    //{
-    //    GetToken(c);
-    //}
     std::istreambuf_iterator <char> it_ = std::istreambuf_iterator<char>(input_);
     std::istreambuf_iterator <char> end_ = std::istreambuf_iterator<char>();
     while (it_ != end_)
+    {
+        char ch = *it_;
         GetToken(it_, end_);
+    }
 
     tokens_.push_back(token_type::Eof());
 }
@@ -116,8 +115,6 @@ const Token& Lexer::CurrentToken() const {
 
     if (indexCurrentToken_ < tokens_.size())
         return tokens_.at(indexCurrentToken_);
-    // Заглушка. Реализуйте метод самостоятельно
-    //throw std::logic_error("Not implemented"s);
     return tokens_.back();
 }
 
@@ -125,9 +122,6 @@ Token Lexer::NextToken() {
     if (indexCurrentToken_ < tokens_.size())
         indexCurrentToken_++;
     return CurrentToken();
-
-    // Заглушка. Реализуйте метод самостоятельно
-    //throw std::logic_error("Not implemented"s);
 }
 
 bool Lexer::isNumber(char c)
@@ -149,7 +143,7 @@ void Lexer::GetToken(std::istreambuf_iterator <char> it_, std::istreambuf_iterat
 {
     const char c = *it_;
     if (isString(c)) {
-        return LoadString(++it_, end_);
+        return LoadString(it_, end_);
     } else if (isNumber(c)) {
         return LoadNumber(it_, end_);
     } else if (isId(c)) {
@@ -160,20 +154,40 @@ void Lexer::GetToken(std::istreambuf_iterator <char> it_, std::istreambuf_iterat
 
 void Lexer::LoadChar(std::istreambuf_iterator<char> it_, std::istreambuf_iterator<char> end_)
 {
-    const char ch = *it_;
+    const char ch = *(it_++);
+
     auto findOneChar = tableOneChars_.find(ch);
     if (findOneChar != tableOneChars_.end())
     {
         tokens_.push_back(findOneChar->second);
-        it_++;
     }
     else
     {
-        char nextC;
-        if ('=' == ch)
+        char nextC  = *it_;
+        if ('\n' == ch)
         {
-            it_++;
-            nextC = *it_;
+            if (tokens_.empty())
+                return;
+            if (tokens_.back().Is<token_type::Newline>())
+                return;
+
+            tokens_.push_back(token_type::Newline());
+            while(it_ != end_ && *it_ == '\n')
+            {
+                it_++;
+            }
+
+            if (*it_ != ' ')
+            {
+                while(currentDent_ > 0)
+                {
+                    currentDent_--;
+                    tokens_.push_back(token_type::Dedent());
+                }
+            }
+        }
+        else if ('=' == ch)
+        {
             if ('=' == nextC)
             {
                 tokens_.push_back(token_type::Eq());
@@ -186,8 +200,6 @@ void Lexer::LoadChar(std::istreambuf_iterator<char> it_, std::istreambuf_iterato
         }
         else if ('!' == ch)
         {
-            it_++;
-            nextC = *it_;
             if ('=' == nextC)
             {
                 tokens_.push_back(token_type::NotEq());
@@ -198,8 +210,6 @@ void Lexer::LoadChar(std::istreambuf_iterator<char> it_, std::istreambuf_iterato
         }
         else if ('>' == ch)
         {
-            it_++;
-            nextC = *it_;
             if ('=' == nextC)
             {
                 tokens_.push_back(token_type::GreaterOrEq());
@@ -212,8 +222,6 @@ void Lexer::LoadChar(std::istreambuf_iterator<char> it_, std::istreambuf_iterato
         }
         else if ('<' == ch)
         {
-            it_++;
-            nextC = *it_;
             if ('=' == nextC)
             {
                 tokens_.push_back(token_type::LessOrEq());
@@ -231,10 +239,11 @@ void Lexer::LoadChar(std::istreambuf_iterator<char> it_, std::istreambuf_iterato
                 size_t counSpace = 1;
                 while(true)
                 {
-                    it_++;
-                    nextC = *it_;
-                    if (' ' == nextC)
+                    if (' ' ==  *it_)
+                    {
+                        it_++;
                         counSpace++;
+                    }
                     else
                     {
                         break;
@@ -245,7 +254,6 @@ void Lexer::LoadChar(std::istreambuf_iterator<char> it_, std::istreambuf_iterato
                     ;//нужно бы бросить ошибку
                 }
                 size_t countDent = counSpace/2;
-
                 while(countDent != currentDent_)
                 {
                     if (countDent > currentDent_)
@@ -273,42 +281,33 @@ void Lexer::LoadChar(std::istreambuf_iterator<char> it_, std::istreambuf_iterato
 void Lexer::LoadString(std::istreambuf_iterator <char> it_, std::istreambuf_iterator <char> end_)
 {
     using namespace std::literals;
-
-    auto it = it_;
-    auto end = end_;
-    //std::string s;
     token_type::String token;
+    const char charEnd = *(it_++);
     while (true) {
-        if (it == end) {
+        if (it_ == end_) {
             // Поток закончился до того, как встретили закрывающую кавычку?
             throw LexerError("String parsing error");
         }
-        const char ch = *it;
-        if (ch == '"' || ch) {
-            // Встретили закрывающую кавычку
-            ++it;
+        const char ch = *it_;
+        if (charEnd == ch) {
+            // Встретили закрывающий символ
+            ++it_;
             break;
         } else if (ch == '\\') {
             // Встретили начало escape-последовательности
-            ++it;
-            if (it == end) {
+            ++it_;
+            if (it_ == end_) {
                 // Поток завершился сразу после символа обратной косой черты
                 throw LexerError("String parsing error");
             }
-            const char escaped_char = *(it);
-            // Обрабатываем одну из последовательностей: \n, \t, \', \"
+            const char escaped_char = *(it_);
+            // Обрабатываем одну из последовательностей: \n, \t
             switch (escaped_char) {
                 case 'n':
                     token.value.push_back('\n');
                     break;
                 case 't':
                     token.value.push_back('\t');
-                    break;
-                case '\'':
-                    token.value.push_back('\'');
-                    break;
-                case '"':
-                    token.value.push_back('"');
                     break;
                 default:
                     // Встретили неизвестную escape-последовательность
@@ -321,7 +320,7 @@ void Lexer::LoadString(std::istreambuf_iterator <char> it_, std::istreambuf_iter
             // Просто считываем очередной символ и помещаем его в результирующую строку
             token.value.push_back(ch);
         }
-        ++it;
+        ++it_;
     }
     tokens_.push_back(token);
 }
@@ -344,7 +343,9 @@ void Lexer::LoadId(std::istreambuf_iterator <char> it_, std::istreambuf_iterator
 {
     std::string str;
 
-    while (isId(*it_) && it_ != end_)
+    str+= *(it_++);
+
+    while (it_ != end_ &&  (isId(*it_) || isNumber(*it_)))
     {
         str+= *(it_++);
     }
