@@ -104,9 +104,10 @@ Lexer::Lexer(std::istream& input):input_(input), indexCurrentToken_(0), currentD
     std::istreambuf_iterator <char> end_ = std::istreambuf_iterator<char>();
     while (it_ != end_)
     {
-        char ch = *it_;
         GetToken(it_, end_);
     }
+    if (!tokens_.empty() && !tokens_.back().Is<token_type::Newline>() && !tokens_.back().Is<token_type::Dedent>() )
+        tokens_.push_back(token_type::Newline());
 
     tokens_.push_back(token_type::Eof());
 }
@@ -271,7 +272,10 @@ void Lexer::LoadChar(std::istreambuf_iterator<char> it_, std::istreambuf_iterato
         }
         else if ('#' == ch)
         {
-            ;
+            while (*it_ != '\n' && it_ != end_)
+            {
+                it_++;
+            }
         }
     }
 
