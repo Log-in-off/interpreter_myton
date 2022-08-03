@@ -99,11 +99,16 @@ Lexer::Lexer(std::istream& input):input_(input), indexCurrentToken_(0), currentD
     tableOneChars_[')'] = token_type::Char{')'};
     tableOneChars_['\n'] = token_type::Newline();
 
-    char c;
-    while (input_ >> c)
-    {
-        GetToken(c);
-    }
+    //char c;
+    //while (input_ >> c)
+    //{
+    //    GetToken(c);
+    //}
+    std::istreambuf_iterator <char> it_ = std::istreambuf_iterator<char>(input_);
+    std::istreambuf_iterator <char> end_ = std::istreambuf_iterator<char>();
+    while (it_ != end_)
+        GetToken(it_, end_);
+
     tokens_.push_back(token_type::Eof());
 }
 
@@ -140,91 +145,98 @@ bool Lexer::isId(char c)
     return ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <='z')) || c == '_';
 }
 
-void Lexer::GetToken(char c)
+void Lexer::GetToken(std::istreambuf_iterator <char> it_, std::istreambuf_iterator <char> end_)
 {
+    const char c = *it_;
     if (isString(c)) {
-        return LoadString();
+        return LoadString(++it_, end_);
     } else if (isNumber(c)) {
-        return LoadNumber(c);
+        return LoadNumber(it_, end_);
     } else if (isId(c)) {
-        return LoadId(c);
+        return LoadId(it_, end_);
     } else
-        return LoadChar(c);
+        return LoadChar(it_, end_);
 }
 
-void Lexer::LoadChar(char c)
+void Lexer::LoadChar(std::istreambuf_iterator<char> it_, std::istreambuf_iterator<char> end_)
 {
-    auto findOneChar = tableOneChars_.find(c);
+    const char ch = *it_;
+    auto findOneChar = tableOneChars_.find(ch);
     if (findOneChar != tableOneChars_.end())
     {
         tokens_.push_back(findOneChar->second);
+        it_++;
     }
     else
     {
         char nextC;
-        if ('=' == c)
+        if ('=' == ch)
         {
-            input_ >> nextC;
+            it_++;
+            nextC = *it_;
             if ('=' == nextC)
             {
                 tokens_.push_back(token_type::Eq());
+                it_++;
             }
             else
             {
                 tokens_.push_back(token_type::Char{'='});
-                if (' ' != nextC)
-                    input_.putback(nextC);
             }
         }
-        else if ('!' == c)
+        else if ('!' == ch)
         {
-            input_ >> nextC;//вычли следующий за ним знак =. Возможно потом нужно будет проверять и возвращать как ошибку
+            it_++;
+            nextC = *it_;
             if ('=' == nextC)
+            {
                 tokens_.push_back(token_type::NotEq());
+                it_++;
+            }
             else
                 throw LexerError("Unexpected char "s + nextC);
         }
-        else if ('>' == c)
+        else if ('>' == ch)
         {
-            input_ >> nextC;
+            it_++;
+            nextC = *it_;
             if ('=' == nextC)
             {
                 tokens_.push_back(token_type::GreaterOrEq());
+                it_++;
             }
             else
             {
                 tokens_.push_back(token_type::Char{'>'});
-                if (' ' != nextC)
-                    input_.putback(nextC);
             }
         }
-        else if ('<' == c)
+        else if ('<' == ch)
         {
-            input_ >> nextC;
+            it_++;
+            nextC = *it_;
             if ('=' == nextC)
             {
                 tokens_.push_back(token_type::LessOrEq());
+                it_++;
             }
             else
             {
                 tokens_.push_back(token_type::Char{'<'});
-                if (' ' != nextC)
-                    input_.putback(nextC);
             }
         }
-        else if (' ' == c)
+        else if (' ' == ch)
         {
             if (tokens_.back() == token_type::Newline())
             {
                 size_t counSpace = 1;
                 while(true)
                 {
-                    input_ >> nextC;
+                    it_++;
+                    nextC = *it_;
                     if (' ' == nextC)
                         counSpace++;
                     else
                     {
-                        input_.putback(nextC);
                         break;
                     }
                 }
@@ -249,7 +261,7 @@ void Lexer::LoadChar(char c)
                 }
             }
         }
-        else if ('#' == c)
+        else if ('#' == ch)
         {
             ;
         }
@@ -258,12 +270,12 @@ void Lexer::LoadChar(char c)
 
 }
 
-void Lexer::LoadString()
+void Lexer::LoadString(std::istreambuf_iterator <char> it_, std::istreambuf_iterator <char> end_)
 {
     using namespace std::literals;
 
-    auto it = std::istreambuf_iterator<char>(input_);
-    auto end = std::istreambuf_iterator<char>();
+    auto it = it_;
+    auto end = end_;
     //std::string s;
     token_type::String token;
     while (true) {
@@ -314,19 +326,29 @@ void Lexer::LoadString()
     tokens_.push_back(token);
 }
 
-void Lexer::LoadNumber(char c)
+void Lexer::LoadNumber(std::istreambuf_iterator <char> it_, std::istreambuf_iterator <char> end_)
 {
-    token_type::Number token;
-    input_.putback(c);
-    input_ >> token.value;
-    tokens_.push_back(token);
+    std::string number;
+    while (isNumber(input_.peek()))
+    {
+        number += static_cast<char>(input_.get());
+    }
+    tokens_.push_back(token_type::Number{std::stoi(number)});
+    //input_.putback(c);
+    //token_type::Number token;
+    //input_ >> token.value;
+    //tokens_.push_back(token);
 }
 
-void Lexer::LoadId(char c)
+void Lexer::LoadId(std::istreambuf_iterator <char> it_, std::istreambuf_iterator <char> end_)
 {
-    input_.putback(c);
     std::string str;
-    input_ >> str;
+
+    while (isId(*it_) && it_ != end_)
+    {
+        str+= *(it_++);
+    }
+
     auto findLex = tableLexems_.find(str);
     if (findLex != tableLexems_.end())
     {

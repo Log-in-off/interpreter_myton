@@ -139,11 +139,11 @@ private:
     bool isString(char c);
     bool isId(char c);
 
-    void GetToken(char c);
-    void LoadString();
-    void LoadNumber(char c);
-    void LoadId(char c);
-    void LoadChar(char c);
+    void GetToken(std::istreambuf_iterator<char> it_, std::istreambuf_iterator<char> end_);
+    void LoadString(std::istreambuf_iterator<char> it_, std::istreambuf_iterator<char> end_);
+    void LoadNumber(std::istreambuf_iterator<char> it_, std::istreambuf_iterator<char> end_);
+    void LoadId(std::istreambuf_iterator<char> it_, std::istreambuf_iterator<char> end_);
+    void LoadChar(std::istreambuf_iterator<char> it_, std::istreambuf_iterator<char> end_);
     std::istream& input_;
     size_t indexCurrentToken_;
     size_t currentDent_;
