@@ -313,6 +313,12 @@ void Lexer::LoadString(std::istreambuf_iterator <char> it_, std::istreambuf_iter
                 case 't':
                     token.value.push_back('\t');
                     break;
+                 case '"':
+                    token.value.push_back('"');
+                    break;
+                 case '\'':
+                    token.value.push_back('\'');
+                    break;
                 default:
                     // Встретили неизвестную escape-последовательность
                     throw LexerError("Unrecognized escape sequence \\"s + escaped_char);
@@ -332,15 +338,11 @@ void Lexer::LoadString(std::istreambuf_iterator <char> it_, std::istreambuf_iter
 void Lexer::LoadNumber(std::istreambuf_iterator <char> it_, std::istreambuf_iterator <char> end_)
 {
     std::string number;
-    while (isNumber(input_.peek()))
+    while (it_ != end_ &&  isNumber(*it_))
     {
-        number += static_cast<char>(input_.get());
+        number += *(it_++);
     }
     tokens_.push_back(token_type::Number{std::stoi(number)});
-    //input_.putback(c);
-    //token_type::Number token;
-    //input_ >> token.value;
-    //tokens_.push_back(token);
 }
 
 void Lexer::LoadId(std::istreambuf_iterator <char> it_, std::istreambuf_iterator <char> end_)
