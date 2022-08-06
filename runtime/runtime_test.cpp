@@ -524,7 +524,6 @@ void TestClassInstance() {
     ostringstream out;
     DummyContext ctx;
     instance.Print(out, ctx);
-    instance.Print(std::cout, ctx);
 
     ASSERT_EQUAL(out.str(), "result"s);
 

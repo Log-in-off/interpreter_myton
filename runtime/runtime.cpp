@@ -82,12 +82,8 @@ void ClassInstance::Print(std::ostream& os, [[maybe_unused]] Context& context) {
     auto FunStr = cls_.GetMethod("__str__");
     if (FunStr)
     {
-        std::vector<ObjectHolder> actual_args;
-        actual_args.push_back(ObjectHolder::Share(*this));
-
-        Call(FunStr->name, actual_args, context);
-
-        //os << FunStr.
+        auto res = Call(FunStr->name, {}, context);
+        os << res.TryAs<String>()->GetValue();
     }
     else
         os << static_cast<void *> (this);
@@ -177,12 +173,8 @@ bool Equal(const ObjectHolder& lhs, const ObjectHolder& rhs, Context& context) {
         return boolLhs->GetValue() == boolRhs->GetValue();
 
     ClassInstance * clInsLhs = lhs.TryAs<ClassInstance>();
-    //ClassInstance * clInsRhs = lhs.TryAs<ClassInstance>();
     if (clInsLhs)
     {
-        //std::vector<ObjectHolder> actual_args;
-        //actual_args.push_back(rhs);
-        //return static_cast<bool>(clInsLhs->Call("__eq__", actual_args, context));
         auto res = clInsLhs->Call("__eq__", {rhs}, context);
         return res.TryAs<Bool>()->GetValue();
     }
@@ -212,9 +204,6 @@ bool Less(const ObjectHolder& lhs, const ObjectHolder& rhs, Context& context) {
     ClassInstance * clInsLhs = lhs.TryAs<ClassInstance>();
     if (clInsLhs)
     {
-        //std::vector<ObjectHolder> actual_args;
-        //actual_args.push_back(rhs);
-        //return static_cast<bool>(clInsLhs->Call("__lt__", actual_args, context));
         auto res = clInsLhs->Call("__lt__", {rhs}, context);
         return res.TryAs<Bool>()->GetValue();
     }
