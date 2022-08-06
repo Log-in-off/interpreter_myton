@@ -131,8 +131,8 @@ void TestMethodInvocation() {
         "test"s, {ObjectHolder::Own(Number{1}), ObjectHolder::Own(String{"abc"s})}, context);
     ASSERT(Equal(res, ObjectHolder::Own(Number{123}), context));
     ASSERT_EQUAL(base_closure.size(), 3U);
-    ASSERT_EQUAL(base_closure.count("self"s), 1U);
     ASSERT_EQUAL(base_closure.at("self"s).Get(), &base_inst);
+    ASSERT_EQUAL(base_closure.count("self"s), 1U);
     ASSERT_EQUAL(base_closure.count("self"s), 1U);
     ASSERT_EQUAL(base_closure.count("arg1"s), 1U);
     ASSERT(Equal(base_closure.at("arg1"s), ObjectHolder::Own(Number{1}), context));
@@ -524,6 +524,8 @@ void TestClassInstance() {
     ostringstream out;
     DummyContext ctx;
     instance.Print(out, ctx);
+    instance.Print(std::cout, ctx);
+
     ASSERT_EQUAL(out.str(), "result"s);
 
     ASSERT_THROWS(instance.Call("missing_method"s, {}, ctx), runtime_error);
