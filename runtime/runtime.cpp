@@ -183,7 +183,8 @@ bool Equal(const ObjectHolder& lhs, const ObjectHolder& rhs, Context& context) {
         //std::vector<ObjectHolder> actual_args;
         //actual_args.push_back(rhs);
         //return static_cast<bool>(clInsLhs->Call("__eq__", actual_args, context));
-        return static_cast<bool>(clInsLhs->Call("__eq__", {rhs}, context));
+        auto res = clInsLhs->Call("__eq__", {rhs}, context);
+        return res.TryAs<Bool>()->GetValue();
     }
 
     if (!lhs && !rhs)
@@ -211,9 +212,11 @@ bool Less(const ObjectHolder& lhs, const ObjectHolder& rhs, Context& context) {
     ClassInstance * clInsLhs = lhs.TryAs<ClassInstance>();
     if (clInsLhs)
     {
-        std::vector<ObjectHolder> actual_args;
-        actual_args.push_back(rhs);
-        return static_cast<bool>(clInsLhs->Call("__lt__", actual_args, context));
+        //std::vector<ObjectHolder> actual_args;
+        //actual_args.push_back(rhs);
+        //return static_cast<bool>(clInsLhs->Call("__lt__", actual_args, context));
+        auto res = clInsLhs->Call("__lt__", {rhs}, context);
+        return res.TryAs<Bool>()->GetValue();
     }
 
     throw std::runtime_error("Cannot compare objects for less"s);
