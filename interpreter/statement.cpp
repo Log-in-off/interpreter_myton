@@ -16,23 +16,36 @@ const string ADD_METHOD = "__add__"s;
 const string INIT_METHOD = "__init__"s;
 }  // namespace
 
-ObjectHolder Assignment::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder Assignment::Execute(Closure& closure, Context& context) {
+    closure[name_] = value_.get()->Execute(closure, context);
+    return closure[name_];
 }
 
-Assignment::Assignment(std::string /*var*/, std::unique_ptr<Statement> /*rv*/) {
+Assignment::Assignment(std::string var, std::unique_ptr<Statement> rv):name_(var), value_(move(rv)) {
 }
 
-VariableValue::VariableValue(const std::string& /*var_name*/) {
+VariableValue::VariableValue(const std::string& var_name) {
+    nameVar_ = var_name;
 }
 
-VariableValue::VariableValue(std::vector<std::string> /*dotted_ids*/) {
+VariableValue::VariableValue(std::vector<std::string> dotted_ids) {
+    bool first = true;
+    for (auto & value :dotted_ids)
+    {
+        if (!first)
+            nameVar_ += ".";
+        first = false;
+        nameVar_ += value;
+    }
 }
 
-ObjectHolder VariableValue::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
+
+    auto f = closure.find(nameVar_);
+    if (f != closure.end())
+        return f->second;
+
+    throw std::runtime_error("Varaible "s + nameVar_ + " is not defined");
 }
 
 unique_ptr<Print> Print::Variable(const std::string& /*name*/) {

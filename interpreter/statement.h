@@ -41,6 +41,7 @@ public:
     explicit VariableValue(std::vector<std::string> dotted_ids);
 
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+    std::string nameVar_;
 };
 
 // Присваивает переменной, имя которой задано в параметре var, значение выражения rv
@@ -49,6 +50,8 @@ public:
     Assignment(std::string var, std::unique_ptr<Statement> rv);
 
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+    std::string name_;
+    std::unique_ptr<Statement> value_;
 };
 
 // Присваивает полю object.field_name значение выражения rv
