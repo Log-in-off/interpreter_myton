@@ -17,8 +17,8 @@ public:
         : value_(std::move(v)) {
     }
 
-    runtime::ObjectHolder Execute(runtime::Closure& /*closure*/,
-                                  runtime::Context& /*context*/) override {
+    runtime::ObjectHolder Execute([[maybe_unused]] runtime::Closure&  closure,
+                                  [[maybe_unused]] runtime::Context& context) override {
         return runtime::ObjectHolder::Share(value_);
     }
 
@@ -60,6 +60,9 @@ public:
     FieldAssignment(VariableValue object, std::string field_name, std::unique_ptr<Statement> rv);
 
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+    VariableValue object_;
+    std::string field_name_;
+    std::unique_ptr<Statement> rv_;
 };
 
 // Значение None

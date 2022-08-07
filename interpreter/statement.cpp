@@ -30,6 +30,7 @@ VariableValue::VariableValue(const std::string& var_name) {
 
 VariableValue::VariableValue(std::vector<std::string> dotted_ids) {
     bool first = true;
+    // нужно хранить целый вектор и как-то различать использование. возможно по size
     for (auto & value :dotted_ids)
     {
         if (!first)
@@ -43,7 +44,10 @@ ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
 
     auto f = closure.find(nameVar_);
     if (f != closure.end())
+    {
+
         return f->second;
+    }
 
     throw std::runtime_error("Varaible "s + nameVar_ + " is not defined");
 }
@@ -120,13 +124,20 @@ ObjectHolder ClassDefinition::Execute(Closure& /*closure*/, Context& /*context*/
     return {};
 }
 
-FieldAssignment::FieldAssignment(VariableValue /*object*/, std::string /*field_name*/,
-                                 std::unique_ptr<Statement> /*rv*/) {
+FieldAssignment::FieldAssignment(VariableValue object, std::string field_name,
+                                 std::unique_ptr<Statement> rv):object_(object), field_name_(field_name), rv_(std::move(rv)) {
 }
 
-ObjectHolder FieldAssignment::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
+    auto f = closure.find(object_.nameVar_);
+    // нет учета вложенных полей
+    if (f != closure.end())
+    {
+        auto cla = f->second.TryAs<runtime::ClassInstance>();
+        cla->Fields()[field_name_] = rv_->Execute(closure, context);
+        return cla->Fields()[field_name_];
+    }
+     throw std::runtime_error("Class hasn't self"s);
 }
 
 IfElse::IfElse(std::unique_ptr<Statement> /*condition*/, std::unique_ptr<Statement> /*if_body*/,
