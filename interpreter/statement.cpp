@@ -67,7 +67,6 @@ ObjectHolder Print::Execute(Closure& closure, Context& context) {
         auto obj = arg.get()->Execute(closure, context);
         if(!obj)
         {
-            //context.GetOutputStream() << "None";
             tmp << "None";
         }
         else
@@ -77,19 +76,15 @@ ObjectHolder Print::Execute(Closure& closure, Context& context) {
             {
                 auto f = closure.find(st->GetValue());
                 if (f != closure.end())
-                    //f->second.Get()->Print(context.GetOutputStream(), context);
                     f->second.Get()->Print(tmp, context);
                 else
-                    //st->Print(context.GetOutputStream(), context);
                     st->Print(tmp, context);
             }
             else
-                //obj->Print(context.GetOutputStream(), context);
                 obj->Print(tmp, context);
         }
 
         if (i-- > 1)
-            //context.GetOutputStream() << ' ';
             tmp << ' ';
     }
     context.GetOutputStream() << tmp.str();
@@ -134,24 +129,66 @@ ObjectHolder Stringify::Execute(Closure& closure, Context& context) {
     return ObjectHolder().Own(runtime::String(tmp.str()));
 }
 
-ObjectHolder Add::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder Add::Execute(Closure& closure, Context& context) {
+    auto lhs = lhs_.get()->Execute(closure, context);
+    auto rhs = rhs_.get()->Execute(closure, context);
+    auto lhsNum = lhs.TryAs<runtime::Number>();
+    auto rhsNum = rhs.TryAs<runtime::Number>();
+    if(lhsNum && rhsNum)
+    {
+        return ObjectHolder().Own(runtime::Number(lhsNum->GetValue()+rhsNum->GetValue()));
+    }
+
+    auto lhsString = lhs.TryAs<runtime::String>();
+    auto rhsString = rhs.TryAs<runtime::String>();
+    if(lhsString && rhsString)
+    {
+        return ObjectHolder().Own(runtime::String(lhsString->GetValue()+rhsString->GetValue()));
+    }
+
+    auto lhsClass = lhs.TryAs<runtime::ClassInstance>();
+    if (lhsClass && lhsClass->HasMethod("__add__", 1))
+    {
+        return lhsClass->Call("__add__", {rhs}, context);
+    }
+
+    throw std::runtime_error("The operation add isn't supported"s);
 }
 
-ObjectHolder Sub::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder Sub::Execute(Closure& closure, Context& context) {
+    auto lhs = lhs_.get()->Execute(closure, context);
+    auto rhs = rhs_.get()->Execute(closure, context);
+    auto lhsNum = lhs.TryAs<runtime::Number>();
+    auto rhsNum = rhs.TryAs<runtime::Number>();
+    if(lhsNum && rhsNum)
+    {
+        return ObjectHolder().Own(runtime::Number(lhsNum->GetValue()-rhsNum->GetValue()));
+    }
+    throw std::runtime_error("The operation sub isn't supported"s);
 }
 
-ObjectHolder Mult::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder Mult::Execute(Closure& closure, Context& context) {
+    auto lhs = lhs_.get()->Execute(closure, context);
+    auto rhs = rhs_.get()->Execute(closure, context);
+    auto lhsNum = lhs.TryAs<runtime::Number>();
+    auto rhsNum = rhs.TryAs<runtime::Number>();
+    if(lhsNum && rhsNum)
+    {
+        return ObjectHolder().Own(runtime::Number(lhsNum->GetValue()*rhsNum->GetValue()));
+    }
+    throw std::runtime_error("The operation mult isn't supported"s);
 }
 
-ObjectHolder Div::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder Div::Execute(Closure& closure, Context& context) {
+    auto lhs = lhs_.get()->Execute(closure, context);
+    auto rhs = rhs_.get()->Execute(closure, context);
+    auto lhsNum = lhs.TryAs<runtime::Number>();
+    auto rhsNum = rhs.TryAs<runtime::Number>();
+    if(lhsNum && rhsNum)
+    {
+        return ObjectHolder().Own(runtime::Number(lhsNum->GetValue()/rhsNum->GetValue()));
+    }
+    throw std::runtime_error("The operation sub isn't supported"s);
 }
 
 ObjectHolder Compound::Execute(Closure& /*closure*/, Context& /*context*/) {
