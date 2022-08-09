@@ -38,7 +38,6 @@ ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
         auto f = closure.find(nameVars_.front());
         if (f != closure.end())
         {
-
             return f->second;
         }
     }
@@ -47,14 +46,11 @@ ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
 }
 
 unique_ptr<Print> Print::Variable(const std::string& name) {
-
-    return std::make_unique<Print>(make_unique<ValueStatement<runtime::String>>(name));
-    throw std::logic_error("Not implemented"s);
+    return std::make_unique<Print>(make_unique<StringConst>(name));
 }
 
 Print::Print(unique_ptr<Statement> argument) {
     args_.push_back(std::move(argument));
-    // Заглушка, реализуйте метод самостоятельно
 }
 
 Print::Print(vector<unique_ptr<Statement>> args) {
@@ -63,22 +59,43 @@ Print::Print(vector<unique_ptr<Statement>> args) {
 }
 
 ObjectHolder Print::Execute(Closure& closure, Context& context) {
+    int i = args_.size();
+    std::stringstream tmp;
+
     for(const auto &arg: args_)
     {
         auto obj = arg.get()->Execute(closure, context);
-        auto st = obj.TryAs<runtime::String>();
-        if (st)
+        if(!obj)
         {
-            auto f = closure.find(st->GetValue());
-            if (f != closure.end())
-            {
-                closure[st->GetValue()].Get()->Print(context.GetOutputStream(), context);
-                context.GetOutputStream() << '\n';
-            }
+            //context.GetOutputStream() << "None";
+            tmp << "None";
         }
-    }
+        else
+        {
+            auto st = obj.TryAs<runtime::String>();
+            if (st)
+            {
+                auto f = closure.find(st->GetValue());
+                if (f != closure.end())
+                    //f->second.Get()->Print(context.GetOutputStream(), context);
+                    f->second.Get()->Print(tmp, context);
+                else
+                    //st->Print(context.GetOutputStream(), context);
+                    st->Print(tmp, context);
+            }
+            else
+                //obj->Print(context.GetOutputStream(), context);
+                obj->Print(tmp, context);
+        }
 
-    // Заглушка. Реализуйте метод самостоятельно
+        if (i-- > 1)
+            //context.GetOutputStream() << ' ';
+            tmp << ' ';
+    }
+    context.GetOutputStream() << tmp.str();
+    context.GetOutputStream() << '\n';
+    //std::string var = tmp.str();
+    //return ObjectHolder().Own(runtime::String(var));
     return {};
 }
 
@@ -92,9 +109,29 @@ ObjectHolder MethodCall::Execute(Closure& /*closure*/, Context& /*context*/) {
     return {};
 }
 
-ObjectHolder Stringify::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder Stringify::Execute(Closure& closure, Context& context) {
+    //return Print(std::move(argument_)).Execute(closure, context);
+    std::stringstream tmp;
+    auto obj = argument_.get()->Execute(closure, context);
+    if(!obj)
+    {
+        tmp << "None";
+    }
+    else
+    {
+        auto st = obj.TryAs<runtime::String>();
+        if (st)
+        {
+            auto f = closure.find(st->GetValue());
+            if (f != closure.end())
+                f->second.Get()->Print(tmp, context);
+            else
+                st->Print(tmp, context);
+        }
+        else
+            obj->Print(tmp, context);
+    }
+    return ObjectHolder().Own(runtime::String(tmp.str()));
 }
 
 ObjectHolder Add::Execute(Closure& /*closure*/, Context& /*context*/) {
@@ -142,7 +179,7 @@ FieldAssignment::FieldAssignment(VariableValue object, std::string field_name,
 
 ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
 
-    runtime::ClassInstance *cl;
+    runtime::ClassInstance *cl = nullptr;
     Closure* cur_closure = &closure;
     for(std::string &name:object_.nameVars_)
     {

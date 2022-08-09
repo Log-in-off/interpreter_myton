@@ -83,7 +83,8 @@ void ClassInstance::Print(std::ostream& os, [[maybe_unused]] Context& context) {
     if (FunStr)
     {
         auto res = Call(FunStr->name, {}, context);
-        os << res.TryAs<String>()->GetValue();
+        res->Print(os, context);
+        //os << res.TryAs<String>()->GetValue();
     }
     else
         os << static_cast<void *> (this);

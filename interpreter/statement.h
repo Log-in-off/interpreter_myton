@@ -125,9 +125,9 @@ public:
 // Базовый класс для унарных операций
 class UnaryOperation : public Statement {
 public:
-    explicit UnaryOperation(std::unique_ptr<Statement> /*argument*/) {
-        // Реализуйте метод самостоятельно
+    explicit UnaryOperation(std::unique_ptr<Statement> argument):argument_(std::move(argument)) {
     }
+    std::unique_ptr<Statement> argument_;
 };
 
 // Операция str, возвращающая строковое значение своего аргумента
