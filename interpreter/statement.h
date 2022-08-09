@@ -41,7 +41,7 @@ public:
     explicit VariableValue(std::vector<std::string> dotted_ids);
 
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
-    std::string nameVar_;
+    std::vector<std::string> nameVars_;
 };
 
 // Присваивает переменной, имя которой задано в параметре var, значение выражения rv
@@ -118,6 +118,7 @@ public:
     NewInstance(const runtime::Class& class_, std::vector<std::unique_ptr<Statement>> args);
     // Возвращает объект, содержащий значение типа ClassInstance
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+    const runtime::Class& clas_;
 };
 
 // Базовый класс для унарных операций

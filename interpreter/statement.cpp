@@ -25,31 +25,25 @@ Assignment::Assignment(std::string var, std::unique_ptr<Statement> rv):name_(var
 }
 
 VariableValue::VariableValue(const std::string& var_name) {
-    nameVar_ = var_name;
+    nameVars_.push_back(var_name);
 }
 
-VariableValue::VariableValue(std::vector<std::string> dotted_ids) {
-    bool first = true;
-    // нужно хранить целый вектор и как-то различать использование. возможно по size
-    for (auto & value :dotted_ids)
-    {
-        if (!first)
-            nameVar_ += ".";
-        first = false;
-        nameVar_ += value;
-    }
+VariableValue::VariableValue(std::vector<std::string> dotted_ids):nameVars_(dotted_ids.begin(), dotted_ids.end()) {
 }
 
 ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
 
-    auto f = closure.find(nameVar_);
-    if (f != closure.end())
+    if (1 == nameVars_.size())
     {
+        auto f = closure.find(nameVars_.front());
+        if (f != closure.end())
+        {
 
-        return f->second;
+            return f->second;
+        }
     }
 
-    throw std::runtime_error("Varaible "s + nameVar_ + " is not defined");
+    throw std::runtime_error("Varaible "s + nameVars_.front() + " is not defined");
 }
 
 unique_ptr<Print> Print::Variable(const std::string& /*name*/) {
@@ -129,15 +123,31 @@ FieldAssignment::FieldAssignment(VariableValue object, std::string field_name,
 }
 
 ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
-    auto f = closure.find(object_.nameVar_);
-    // нет учета вложенных полей
-    if (f != closure.end())
+
+    runtime::ClassInstance *cl;
+    Closure* cur_closure = &closure;
+    for(std::string &name:object_.nameVars_)
     {
-        auto cla = f->second.TryAs<runtime::ClassInstance>();
-        cla->Fields()[field_name_] = rv_->Execute(closure, context);
-        return cla->Fields()[field_name_];
+        auto f = cur_closure->find(name);
+        if (f != cur_closure->end())
+        {
+            cl = f->second.TryAs<runtime::ClassInstance>();
+            cur_closure = &cl->Fields();
+        }
+        else
+        {
+            cl = nullptr;
+            break;
+        }
     }
-     throw std::runtime_error("Class hasn't self"s);
+
+    if (cl)
+    {
+        cl->Fields()[field_name_] = rv_->Execute(closure, context);
+        return cl->Fields()[field_name_];
+    }
+
+    throw std::runtime_error("Class hasn't self"s);
 }
 
 IfElse::IfElse(std::unique_ptr<Statement> /*condition*/, std::unique_ptr<Statement> /*if_body*/,
@@ -175,17 +185,18 @@ ObjectHolder Comparison::Execute(Closure& /*closure*/, Context& /*context*/) {
     return {};
 }
 
-NewInstance::NewInstance(const runtime::Class& /*class_*/, std::vector<std::unique_ptr<Statement>> /*args*/){
+NewInstance::NewInstance(const runtime::Class& class_, std::vector<std::unique_ptr<Statement>> /*args*/):clas_(class_){
     // Заглушка. Реализуйте метод самостоятельно
 }
 
-NewInstance::NewInstance(const runtime::Class& /*class_*/) {
+NewInstance::NewInstance(const runtime::Class& class_):clas_(class_) {
     // Заглушка. Реализуйте метод самостоятельно
 }
 
 ObjectHolder NewInstance::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+    ObjectHolder tmp = ObjectHolder().Own(runtime::ClassInstance(clas_));
+    // нужно выполнить поле init при наличии
+    return tmp;
 }
 
 MethodBody::MethodBody(std::unique_ptr<Statement>&& /*body*/) {
