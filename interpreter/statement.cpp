@@ -46,20 +46,38 @@ ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
     throw std::runtime_error("Varaible "s + nameVars_.front() + " is not defined");
 }
 
-unique_ptr<Print> Print::Variable(const std::string& /*name*/) {
-    // Заглушка, реализуйте метод самостоятельно
+unique_ptr<Print> Print::Variable(const std::string& name) {
+
+    return std::make_unique<Print>(make_unique<ValueStatement<runtime::String>>(name));
     throw std::logic_error("Not implemented"s);
 }
 
-Print::Print(unique_ptr<Statement> /*argument*/) {
+Print::Print(unique_ptr<Statement> argument) {
+    args_.push_back(std::move(argument));
     // Заглушка, реализуйте метод самостоятельно
 }
 
-Print::Print(vector<unique_ptr<Statement>> /*args*/) {
-    // Заглушка, реализуйте метод самостоятельно
+Print::Print(vector<unique_ptr<Statement>> args) {
+    for(auto &var: args)
+        args_.push_back(std::move(var));
 }
 
-ObjectHolder Print::Execute(Closure& /*closure*/, Context& /*context*/) {
+ObjectHolder Print::Execute(Closure& closure, Context& context) {
+    for(const auto &arg: args_)
+    {
+        auto obj = arg.get()->Execute(closure, context);
+        auto st = obj.TryAs<runtime::String>();
+        if (st)
+        {
+            auto f = closure.find(st->GetValue());
+            if (f != closure.end())
+            {
+                closure[st->GetValue()].Get()->Print(context.GetOutputStream(), context);
+                context.GetOutputStream() << '\n';
+            }
+        }
+    }
+
     // Заглушка. Реализуйте метод самостоятельно
     return {};
 }
