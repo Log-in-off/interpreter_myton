@@ -191,9 +191,12 @@ ObjectHolder Div::Execute(Closure& closure, Context& context) {
     throw std::runtime_error("The operation sub isn't supported"s);
 }
 
-ObjectHolder Compound::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder Compound::Execute(Closure& closure, Context& context) {
+    for(auto & value:comp_)
+    {
+        value.get()->Execute(closure, context);
+    }
+    return ObjectHolder().None();
 }
 
 ObjectHolder Return::Execute(Closure& /*closure*/, Context& /*context*/) {
@@ -277,16 +280,21 @@ ObjectHolder Comparison::Execute(Closure& /*closure*/, Context& /*context*/) {
     return {};
 }
 
-NewInstance::NewInstance(const runtime::Class& class_, std::vector<std::unique_ptr<Statement>> /*args*/):clas_(class_){
-    // Заглушка. Реализуйте метод самостоятельно
+NewInstance::NewInstance(const runtime::Class& class_, std::vector<std::unique_ptr<Statement>> args):clas_(class_){
+    for(auto &var: args)
+        args_.push_back(std::move(var));
 }
 
 NewInstance::NewInstance(const runtime::Class& class_):clas_(class_) {
-    // Заглушка. Реализуйте метод самостоятельно
 }
 
 ObjectHolder NewInstance::Execute(Closure& /*closure*/, Context& /*context*/) {
     ObjectHolder tmp = ObjectHolder().Own(runtime::ClassInstance(clas_));
+    //if (tmp.TryAs<runtime::ClassInstance>()->HasMethod("__init__", args_.size()))
+    //{
+    //     std::vector<ObjectHolder>
+    //    tmp.TryAs<runtime::ClassInstance>()->Call("__init__", args_, context);
+    //}
     // нужно выполнить поле init при наличии
     return tmp;
 }

@@ -120,6 +120,7 @@ public:
     // Возвращает объект, содержащий значение типа ClassInstance
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
     const runtime::Class& clas_;
+    std::vector<std::unique_ptr<Statement>> args_;
 };
 
 // Базовый класс для унарных операций
@@ -224,17 +225,20 @@ class Compound : public Statement {
 public:
     // Конструирует Compound из нескольких инструкций типа unique_ptr<Statement>
     template <typename... Args>
-    explicit Compound(Args&&... /*args*/) {
+    explicit Compound(Args&&... args) {
+        (comp_.push_back(std::move(args)), ...);
         // Реализуйте метод самостоятельно
     }
 
     // Добавляет очередную инструкцию в конец составной инструкции
-    void AddStatement(std::unique_ptr<Statement> /*stmt*/) {
-        // Реализуйте метод самостоятельно
+    void AddStatement(std::unique_ptr<Statement> stmt) {
+        comp_.push_back(std::move(stmt));
     }
 
     // Последовательно выполняет добавленные инструкции. Возвращает None
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+
+    std::vector<std::unique_ptr<Statement>> comp_;
 };
 
 // Тело метода. Как правило, содержит составную инструкцию
