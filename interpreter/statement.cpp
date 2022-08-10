@@ -41,6 +41,25 @@ ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
             return f->second;
         }
     }
+    else
+    {
+        Closure* cur_closure = &closure;
+        for(auto &value: nameVars_)
+        {
+            auto f = cur_closure->find(value);
+            if(f != cur_closure->end())
+            {
+                auto cl = f->second.TryAs<runtime::ClassInstance>();
+                if (cl)
+                {
+                    cur_closure = &cl->Fields();
+                }
+                else
+                    return f->second;
+            }
+
+        }
+    }
 
     throw std::runtime_error("Varaible "s + nameVars_.front() + " is not defined");
 }
