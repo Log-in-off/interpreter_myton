@@ -98,6 +98,9 @@ public:
                std::vector<std::unique_ptr<Statement>> args);
 
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+    std::unique_ptr<Statement> object_;
+    std::string method_;
+    std::vector<std::unique_ptr<Statement>> args_;
 };
 
 /*
@@ -273,6 +276,7 @@ public:
     // Создаёт внутри closure новый объект, совпадающий с именем класса и значением, переданным в
     // конструктор
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+    runtime::ObjectHolder cls_;
 };
 
 // Инструкция if <condition> <if_body> else <else_body>
