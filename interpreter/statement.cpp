@@ -147,9 +147,9 @@ ObjectHolder Add::Execute(Closure& closure, Context& context) {
     }
 
     auto lhsClass = lhs.TryAs<runtime::ClassInstance>();
-    if (lhsClass && lhsClass->HasMethod("__add__", 1))
+    if (lhsClass && lhsClass->HasMethod(ADD_METHOD, 1))
     {
-        return lhsClass->Call("__add__", {rhs}, context);
+        return lhsClass->Call(ADD_METHOD, {rhs}, context);
     }
 
     throw std::runtime_error("The operation add isn't supported"s);
@@ -255,19 +255,50 @@ ObjectHolder IfElse::Execute(Closure& /*closure*/, Context& /*context*/) {
     return {};
 }
 
-ObjectHolder Or::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder Or::Execute(Closure& closure, Context& context) {
+    auto lhs = lhs_.get()->Execute(closure, context);
+    auto lhsBool = lhs.TryAs<runtime::Bool>();
+    if (lhsBool && lhsBool->GetValue())
+    {
+        return ObjectHolder().Own(runtime::Bool(true));
+    }
+
+    auto rhs = rhs_.get()->Execute(closure, context);
+    auto rhsBool = rhs.TryAs<runtime::Bool>();
+    if(rhsBool && rhsBool->GetValue())
+    {
+         return ObjectHolder().Own(runtime::Bool(true));
+    }
+
+    return ObjectHolder().Own(runtime::Bool(false));
 }
 
-ObjectHolder And::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder And::Execute(Closure& closure, Context& context) {
+    auto lhs = lhs_.get()->Execute(closure, context);
+    auto lhsBool = lhs.TryAs<runtime::Bool>();
+    if (lhsBool && !lhsBool->GetValue())
+    {
+        return ObjectHolder().Own(runtime::Bool(false));
+    }
+
+    auto rhs = rhs_.get()->Execute(closure, context);
+    auto rhsBool = rhs.TryAs<runtime::Bool>();
+    if(rhsBool && rhsBool->GetValue())
+    {
+         return ObjectHolder().Own(runtime::Bool(true));
+    }
+
+    return ObjectHolder().Own(runtime::Bool(false));
 }
 
-ObjectHolder Not::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder Not::Execute(Closure& closure, Context& context) {
+    auto lhs = argument_.get()->Execute(closure, context);
+    auto lhsBool = lhs.TryAs<runtime::Bool>();
+    if (lhsBool)
+    {
+        return ObjectHolder().Own(runtime::Bool(!lhsBool->GetValue()));
+    }
+     throw std::runtime_error("The operation 'not' isn't supported"s);
 }
 
 Comparison::Comparison(Comparator /*cmp*/, unique_ptr<Statement> lhs, unique_ptr<Statement> rhs)
