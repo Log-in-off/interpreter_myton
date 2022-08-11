@@ -118,14 +118,24 @@ MethodCall::MethodCall(std::unique_ptr<Statement> object, std::string method,
     ;
 }
 
-ObjectHolder MethodCall::Execute(Closure& /*closure*/, Context& /*context*/) {
-    //object_.
-    // Заглушка. Реализуйте метод самостоятельно
+ObjectHolder MethodCall::Execute(Closure& closure, Context& context) {
+    auto obj = object_.get()->Execute(closure, context);
+    auto cl = obj.TryAs<runtime::ClassInstance>();
+    if (cl)
+    {
+        if (cl->HasMethod(method_, args_.size()))
+        {
+            std::vector<ObjectHolder> actual_args;
+            for (auto &value:args_)
+                actual_args.push_back(value.get()->Execute(closure, context));
+
+            return cl->Call(method_, actual_args, context);
+        }
+    }
     return {};
 }
 
 ObjectHolder Stringify::Execute(Closure& closure, Context& context) {
-    //return Print(std::move(argument_)).Execute(closure, context);
     std::stringstream tmp;
     auto obj = argument_.get()->Execute(closure, context);
     if(!obj)
@@ -230,8 +240,6 @@ ClassDefinition::ClassDefinition(ObjectHolder cls):cls_(cls) {
 
 ObjectHolder ClassDefinition::Execute(Closure& closure, Context&/* context*/) {
     closure[cls_.TryAs<runtime::Class>()->GetName()] = cls_;
-    //closure["dfs"] = ObjectHolder().    //cls_.TryAs<runtime::Class>().
-    // Заглушка. Реализуйте метод самостоятельно
     return {};
 }
 
@@ -267,14 +275,23 @@ ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
     throw std::runtime_error("Class hasn't self"s);
 }
 
-IfElse::IfElse(std::unique_ptr<Statement> /*condition*/, std::unique_ptr<Statement> /*if_body*/,
-               std::unique_ptr<Statement> /*else_body*/) {
-    // Реализуйте метод самостоятельно
+IfElse::IfElse(std::unique_ptr<Statement> condition, std::unique_ptr<Statement> if_body,
+               std::unique_ptr<Statement> else_body):condition_(std::move(condition)), if_body_(std::move(if_body)),else_body_(std::move(else_body)) {
     ;
 }
 
-ObjectHolder IfElse::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
+ObjectHolder IfElse::Execute(Closure& closure, Context& context) {
+    auto cond = condition_.get()->Execute(closure, context);
+    auto tmpBool = cond.TryAs<runtime::Bool>();
+    if (tmpBool)
+    {
+        if(tmpBool->GetValue())
+            return if_body_.get()->Execute(closure,context);
+        else if (else_body_.get())
+        {
+            return else_body_.get()->Execute(closure, context);
+        }
+    }
     return {};
 }
 

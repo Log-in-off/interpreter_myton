@@ -288,6 +288,9 @@ public:
            std::unique_ptr<Statement> else_body);
 
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+    std::unique_ptr<Statement> condition_;
+    std::unique_ptr<Statement> if_body_;
+    std::unique_ptr<Statement> else_body_;
 };
 
 // Операция сравнения
