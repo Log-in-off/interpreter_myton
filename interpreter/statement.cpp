@@ -219,8 +219,8 @@ ObjectHolder Compound::Execute(Closure& closure, Context& context) {
     return ObjectHolder().None();
 }
 
-ObjectHolder Return::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
+ObjectHolder Return::Execute(Closure& closure, Context& context) {
+    throw statement_.get()->Execute(closure, context);
     return {};
 }
 
@@ -359,13 +359,21 @@ ObjectHolder NewInstance::Execute(Closure& closure, Context& context) {
     return tmp;
 }
 
-MethodBody::MethodBody(std::unique_ptr<Statement>&& /*body*/) {
+MethodBody::MethodBody(std::unique_ptr<Statement>&& body):body_(std::move(body)) {
     ;
 }
 
-ObjectHolder MethodBody::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder MethodBody::Execute(Closure& closure, Context& context) {
+    try
+    {
+        body_.get()->Execute(closure, context);
+    }
+    catch(ObjectHolder var)
+    {
+        return var;
+    }
+
+    return ObjectHolder().None();
 }
 
 }  // namespace ast

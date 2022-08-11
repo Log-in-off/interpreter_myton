@@ -253,18 +253,19 @@ public:
     // Если внутри body была выполнена инструкция return, возвращает результат return
     // В противном случае возвращает None
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+    std::unique_ptr<Statement> body_;
 };
 
 // Выполняет инструкцию return с выражением statement
 class Return : public Statement {
 public:
-    explicit Return(std::unique_ptr<Statement> /*statement*/) {
-        // Реализуйте метод самостоятельно
+    explicit Return(std::unique_ptr<Statement> statement):statement_(std::move(statement)) {
     }
 
     // Останавливает выполнение текущего метода. После выполнения инструкции return метод,
     // внутри которого она была исполнена, должен вернуть результат вычисления выражения statement.
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+    std::unique_ptr<Statement> statement_;
 };
 
 // Объявляет класс
