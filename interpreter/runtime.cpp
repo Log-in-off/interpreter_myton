@@ -119,7 +119,8 @@ ObjectHolder ClassInstance::Call(const std::string& method,
     {
         const Method * ptrMethod = cls_.GetMethod(method);
         Closure closures;
-        closures["self"] = closures_["self"];
+        //closures["self"] = closures_["self"];
+        closures["self"] = ObjectHolder::Share(*this);
         for(size_t i = 0; i < actual_args.size(); i++)
             closures[ptrMethod->formal_params[i]] = actual_args[i];
 
