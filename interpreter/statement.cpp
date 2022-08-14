@@ -341,15 +341,17 @@ ObjectHolder Not::Execute(Closure& closure, Context& context) {
      throw std::runtime_error("The operation 'not' isn't supported"s);
 }
 
-Comparison::Comparison(Comparator /*cmp*/, unique_ptr<Statement> lhs, unique_ptr<Statement> rhs)
-    : BinaryOperation(std::move(lhs), std::move(rhs)) {
-    // Реализуйте метод самостоятельно
+Comparison::Comparison(Comparator cmp, unique_ptr<Statement> lhs, unique_ptr<Statement> rhs)
+    : BinaryOperation(std::move(lhs), std::move(rhs)), cmp_(cmp) {
     ;
 }
 
-ObjectHolder Comparison::Execute(Closure& /*closure*/, Context& /*context*/) {
-    // Заглушка. Реализуйте метод самостоятельно
-    return {};
+ObjectHolder Comparison::Execute(Closure& closure, Context& context) {
+    auto lh = lhs_->Execute(closure, context);
+    auto rh = rhs_->Execute(closure, context);
+
+    auto res = cmp_(lh,rh, context);
+    return ObjectHolder().Own(runtime::Bool(res));
 }
 
 NewInstance::NewInstance(const runtime::Class& class_, std::vector<std::unique_ptr<Statement>> args):clas_(class_){

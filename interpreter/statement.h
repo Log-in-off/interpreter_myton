@@ -305,6 +305,7 @@ public:
     // Вычисляет значение выражений lhs и rhs и возвращает результат работы comparator,
     // приведённый к типу runtime::Bool
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+    Comparator cmp_;
 };
 
 }  // namespace ast
